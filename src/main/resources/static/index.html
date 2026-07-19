@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>URL Shortener</title>
+<style>
+  body { font-family: -apple-system, Segoe UI, sans-serif; max-width: 640px; margin: 40px auto; background: #f4f5f7; }
+  .card { background: white; border-radius: 8px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; }
+  input, button { padding: 10px; font-size: 14px; border-radius: 6px; border: 1px solid #ccc; }
+  input { width: 100%; margin-bottom: 10px; box-sizing: border-box; }
+  button { background: #4a4ae0; color: white; border: none; cursor: pointer; padding: 10px 16px; }
+  button:hover { background: #3a3ac0; }
+  #result, #analytics-result { margin-top: 14px; word-break: break-all; }
+  .short-link { font-weight: 600; color: #4a4ae0; }
+  .error { color: #c0392b; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  td, th { text-align: left; padding: 6px; border-bottom: 1px solid #eee; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h2>URL Shortener</h2>
+  <input id="original-url" placeholder="https://example.com/some/very/long/link" />
+  <input id="custom-alias" placeholder="custom alias (optional)" />
+  <input id="expires-days" type="number" placeholder="expires in days (optional)" />
+  <button onclick="shorten()">Shorten</button>
+  <div id="result"></div>
+</div>
+
+<div class="card">
+  <h2>Analytics Lookup</h2>
+  <input id="analytics-code" placeholder="short code, e.g. 3" />
+  <button onclick="lookupAnalytics()">Check Analytics</button>
+  <div id="analytics-result"></div>
+</div>
+
+<script>
+async function shorten() {
+  const originalUrl = document.getElementById('original-url').value.trim();
+  const customAlias = document.getElementById('custom-alias').value.trim();
+  const expiresDays = document.getElementById('expires-days').value;
+  const resultEl = document.getElementById('result');
+  resultEl.innerHTML = '';
+
+  const body = { originalUrl };
+  if (customAlias) body.customAlias = customAlias;
+  if (expiresDays) body.expiresInDays = parseInt(expiresDays, 10);
+
+  try {
+    const res = await fetch('/api/shorten', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      resultEl.innerHTML = '<p class="error">' + text + '</p>';
+      return;
+    }
+    const data = JSON.parse(text);
+    resultEl.innerHTML =
+      '<p>Short URL: <a class="short-link" href="' + data.shortUrl + '" target="_blank">' + data.shortUrl + '</a></p>' +
+      '<p>Expires: ' + new Date(data.expiresAt).toLocaleString() + '</p>';
+  } catch (e) {
+    resultEl.innerHTML = '<p class="error">Request failed: ' + e + '</p>';
+  }
+}
+
+async function lookupAnalytics() {
+  const code = document.getElementById('analytics-code').value.trim();
+  const el = document.getElementById('analytics-result');
+  el.innerHTML = '';
+  if (!code) return;
+
+  try {
+    const res = await fetch('/api/analytics/' + code);
+    const text = await res.text();
+    if (!res.ok) {
+      el.innerHTML = '<p class="error">' + text + '</p>';
+      return;
+    }
+    const data = JSON.parse(text);
+    let html = '<p><strong>' + data.totalClicks + '</strong> total clicks on ' + data.originalUrl + '</p>';
+    html += '<p>Created: ' + new Date(data.createdAt).toLocaleString() + '</p>';
+    html += '<p>Expires: ' + (data.expiresAt ? new Date(data.expiresAt).toLocaleString() : 'Never') + '</p>';
+    html += '<table><tr><th>Time</th><th>Referrer</th></tr>';
+    data.recentClicks.forEach(c => {
+      html += '<tr><td>' + new Date(c.timestamp).toLocaleString() + '</td><td>' + (c.referrer || '-') + '</td></tr>';
+    });
+    html += '</table>';
+    el.innerHTML = html;
+  } catch (e) {
+    el.innerHTML = '<p class="error">Request failed: ' + e + '</p>';
+  }
+}
+</script>
+</body>
+</html>
