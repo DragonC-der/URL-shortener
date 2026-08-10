@@ -11,6 +11,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -81,6 +83,27 @@ public class UrlShortenerController {
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<String> handleResponseStatus(ResponseStatusException e) {
         return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+    }
+
+    // Without this, a failed @Valid check (bad URL, alias too short, etc.)
+    // falls through to Spring's generic default error page - a bare
+    // {timestamp, status, error, path} JSON with no indication of WHICH
+    // field failed or why. This surfaces the actual validation message(s).
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<String> handleValidation(MethodArgumentNotValidException e) {
+        String message = e.getBindingResult().getFieldErrors().stream()
+                .map(err -> err.getField() + ": " + err.getDefaultMessage())
+                .reduce((a, b) -> a + "; " + b)
+                .orElse("Invalid request");
+        return ResponseEntity.badRequest().body(message);
+    }
+
+    // Malformed JSON (bad shell quoting, missing quotes, trailing commas,
+    // etc.) throws this before validation even runs - same generic-error
+    // problem as above, same fix.
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<String> handleUnreadable(HttpMessageNotReadableException e) {
+        return ResponseEntity.badRequest().body("Malformed request body - check your JSON syntax");
     }
 
     /** Render (and most PaaS/load balancer setups) sit in front of the app,
