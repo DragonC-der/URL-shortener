@@ -195,6 +195,8 @@ url-shortener/
 
 Built to demonstrate caching, indexing, and rate limiting — not just "hash a string and redirect."
 
-Developed and Designed by ## DragonC-der
+Developed and Designed by
+
+-- DragonC-der --
 
 </div>
