@@ -49,7 +49,8 @@ The "todo-list-tier" URL shortener is: generate a random string, store `{code: u
 - 🐘 PostgreSQL-backed, Render-deployment-ready out of the box
 
 ## Live page link
-https://url-shortener-43x2.onrender.com/
+[Click here](https://url-shortener-43x2.onrender.com/)
+
 
 (Wait a bit or visit again after some time of clicking on the link)
 Service Cold start needed a bit time :)
