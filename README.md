@@ -48,6 +48,11 @@ The "todo-list-tier" URL shortener is: generate a random string, store `{code: u
 - ⏳ Optional expiry per URL, with custom aliases and collision checking
 - 🐘 PostgreSQL-backed, Render-deployment-ready out of the box
 
+## Live page link
+https://url-shortener-43x2.onrender.com/
+(Wait a bit or visit again after some time of clicking on the link)
+Service Cold start needed a bit time :)
+
 ## Quick Start
 
 Requires Java 21, Maven, and either PostgreSQL running locally or the H2 profile for quick testing.
