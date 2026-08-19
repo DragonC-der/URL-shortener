@@ -60,8 +60,8 @@ Service Cold start needed a bit time :)
 Requires Java 21, Maven, and either PostgreSQL running locally or the H2 profile for quick testing.
 
 ```bash
-git clone <your-repo-url>
-cd url-shortener
+git clone https://github.com/DragonC-der/URL-shortener
+cd URL-shortener
 
 # Fastest path - no Postgres install needed:
 mvn spring-boot:run -Dspring-boot.run.profiles=h2
@@ -74,12 +74,11 @@ curl -X POST http://localhost:8080/api/shorten \
   -d '{"originalUrl": "https://example.com/some/very/long/path"}'
 ```
 
-**With PostgreSQL** (matches the Render deployment target):
+**With PostgreSQL** :
 ```bash
 # create a local Postgres DB named urlshortener first, then:
 mvn spring-boot:run
 ```
-Connection settings default to `localhost:5432` with `postgres`/`postgres` — override via `DATABASE_URL`, `DB_USERNAME`, `DB_PASSWORD` environment variables, exactly how Render injects them in production.
 
 ## Architecture
 
@@ -111,12 +110,12 @@ PostgreSQL (Render-hosted)
 6. A `ClickEvent` row is recorded as a side effect of the redirect — analytics never blocks the actual redirect.
 
 <details>
-<summary><strong>A routing gotcha worth knowing (and mentioning in an interview)</strong></summary>
+<summary><strong>A routing gotcha worth knowing</strong></summary>
 
 The redirect endpoint is `@GetMapping("/{shortCode:^[^.]*$}")`, not just `@GetMapping("/{shortCode}")`. Without the regex constraint, this catch-all path variable matches *any* single path segment — including `/index.html` — and Spring routes annotated `@Controller` mappings with higher priority than static resource serving. That means the redirect handler would swallow requests for the frontend's own `index.html`, `favicon.ico`, and any other static asset at the root path, before Spring ever gets a chance to serve the actual file. Since short codes are always plain alphanumeric (never containing a dot) but static assets always have a file extension, excluding anything with a `.` in the path pattern lets those requests fall through to static resource serving instead.
 </details>
 
-## Algorithms Reference (have these ready to explain)
+## Algorithms Reference
 
 ### Base62 encoding
 Converts a numeric DB ID into a short alphanumeric string using positional-numeral conversion — the same concept as converting a number to binary or hex, just base 62 (`0-9`, `a-z`, `A-Z`) instead of base 2 or 16. ID `125` encodes to `"cb"` — division-and-remainder, reversed at the end. Decoding reverses the process. See `Base62Encoder.java`.
@@ -139,16 +138,7 @@ Each client IP gets a bucket that starts full and refills continuously over time
 
 Rate limit on `/api/shorten`: 10 requests per client IP, refilling at 10/minute (configurable in `application.yml`).
 
-## Deploying to Render
-
-1. Push this repo to GitHub.
-2. Create a **PostgreSQL** instance on Render — copy its internal `DATABASE_URL`.
-3. Create a **Web Service** pointing at this repo. Build command: `mvn clean package -DskipTests`. Start command: `java -jar target/url-shortener-1.0.0.jar`.
-4. Set environment variables on the web service: `DATABASE_URL`, `DB_USERNAME`, `DB_PASSWORD` (from the Postgres instance), and `APP_BASE_URL` to your Render-assigned public URL (needed so generated short URLs point at the real deployed domain, not `localhost`).
-
 ## Known Limitations
-
-Named directly rather than left for someone else to discover:
 
 - **Cache is per-instance, in-memory.** Scale to multiple server instances and each one has its own cache with no shared state — a cache hit on instance A doesn't help instance B. Redis would be the standard fix for a shared cache layer.
 - **Rate limiter state is also per-instance and unbounded in memory** — the `ConcurrentHashMap` of IP → bucket grows forever and doesn't survive a restart. Fine for a single-instance portfolio deployment, a real gap at scale.
@@ -204,5 +194,7 @@ url-shortener/
 <div align="center">
 
 Built to demonstrate caching, indexing, and rate limiting — not just "hash a string and redirect."
+
+Developed and Designed by ## DragonC-der
 
 </div>
