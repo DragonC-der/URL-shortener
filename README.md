@@ -1,4 +1,5 @@
 <div align="center">
+  
 # URL Shortener
 
 A backend-focused URL shortener built with **Java 21, Spring Boot 3, PostgreSQL, and Docker**. The project goes beyond storing `{shortCode -> URL}` in a basic map by implementing Base62 code generation, a custom LRU cache, token-bucket rate limiting, URL expiry, click analytics, and a small browser UI.
